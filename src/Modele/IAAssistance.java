@@ -35,6 +35,9 @@ import java.util.*;
 
 class IAAssistance extends IA {
 	Random r;
+	final static int MARRON = 0xBB7755;
+	final static int ROUGE = 0xFF0000;
+
 
 	public IAAssistance() {
 		r = new Random();
@@ -79,95 +82,176 @@ class IAAssistance extends IA {
 		}
 		Configuration.info("Sortie de la méthode de jeu de l'IA");
 
-		Niveau n = super.niveau;
-		ArrayList<Graphe> racinePerso = new ArrayList<>();
-		creationGraphePerso(racinePerso, n);
 
+		//Debut IA
+		//Niveau n = super.niveau;
+		Niveau n = jeu.niveau();
+
+		//Creation graphe des positions possibles du perso
+		ArrayList<Graphe> racinePerso = new ArrayList<>();
+		creationGraphe(racinePerso, n);
+		showGraph(racinePerso);
+
+		//Creation graphe des positions possibles des caisses
 		ArrayList<Graphe> racineCaisse = new ArrayList<>();
 		creationGrapheCaisse(racineCaisse, n);
-
-		showGraph(racinePerso);
-		System.out.println();
 		showGraph(racineCaisse);
+		System.out.println("Caisses");
+
 
 
 		return resultat;
 
 	}
 
-	public void creationGraphePerso(ArrayList<Graphe> racine, Niveau n){
+	public void recVerifCouloir(ArrayList<Graphe> racine, ArrayList<Graphe> supp, Graphe elm){
 
-		for (int y = 0; y<n.lignes(); y++){
-			for (int x = 0; x<n.colonnes(); x++){
-				if(!n.aMur(y,x)){
+		if(elm.adj.size() >1){
+			return;
+		} else{
 
-					ArrayList<Coords> adj = new ArrayList<>();
-					if(x-1 >= 0){
-						adj.add(new Coords(x-1,y));
-					}
-					if(x+1 < n.colonnes()){
-						adj.add(new Coords(x+1,y));
-					}
-					if(y-1 < n.lignes()){
-						adj.add(new Coords(x,y-1));
-					}
-					if(y-1 >= 0){
-						adj.add(new Coords(x,y+1));
-					}
+			for (int i=0; i < racine.size(); i++){
 
-					racine.add(new Graphe(new Coords(x,y), adj));
+			}
+
+		}
+	}
+
+	public void supprElm(ArrayList<Graphe> racine, Graphe elm){
+
+		//Chaque Noeud
+		for (int i =0; i< racine.size(); i++){
+
+			Graphe rElm = racine.get(i);
+			ArrayList<Graphe> rCoords = rElm.adj;
+
+			// Chaque Noeud adjacent
+			for (int j =0; j< rElm.adj.size(); j++){
+
+				// Si elem est adjacent
+				if(elm.coords.x == rCoords.get(j).coords.x && elm.coords.y == rCoords.get(j).coords.y){
+					System.out.format("Suppr(%d %d) %d,%d\n",rElm.coords.x,rElm.coords.y, elm.coords.x,elm.coords.y);
+					rCoords.remove(j);
+					System.out.format("nsize %d\n",rCoords.size());
+					break;
 				}
 			}
 		}
+		System.out.format("Suppr def %d,%d\n",elm.coords.x,elm.coords.y);
+		racine.remove(elm);
 	}
 
 	public void creationGrapheCaisse(ArrayList<Graphe> racine, Niveau n){
 
-		for (int y = 0; y<n.lignes(); y++){
-			for (int x = 0; x<n.colonnes(); x++){
-				if(!n.aMur(y,x)){
+		//Memes positions que le perso mais sans les coins et couloirs
+		creationGraphe(racine, n);
 
-					ArrayList<Coords> adj = new ArrayList<>();
-					int c1,c2;
-					c1=c2=0;
+		//Enlever les couloirs
+		int tot1 = 0;
+		while(tot1 < racine.size()){
+			Graphe elm = racine.get(tot1);
+			int x = elm.coords.x;
+			int y = elm.coords.y;
 
-					// G
-					if(x-1 >= 0 && !n.aMur(y,x-1)){
-						adj.add(new Coords(x-1,y));
-					}else{
-						c1+=1;
+			if (elm.adj.size() <= 1 && !n.aBut(y,x)){
+
+				supprElm(racine,elm);
+
+				racine.remove(elm);
+				n.fixerMarque(MARRON,elm.coords.y,elm.coords.x);
+				tot1 = 0;
+			}
+			tot1++;
+		}
+
+		//Enlever les coins
+		int tot = 0;
+		while(tot < racine.size()){
+			Graphe elm = racine.get(tot);
+			int x = elm.coords.x;
+			int y = elm.coords.y;
+
+			if(elm.coords.x == 6 && elm.coords.y == 9){
+				System.out.format("Len :%d\n",elm.adj.size());
+			}
+
+			if(elm.adj.size()==2) {
+				if(elm.adj.get(0).coords.x != elm.adj.get(1).coords.x && elm.adj.get(0).coords.y != elm.adj.get(1).coords.y && !n.aBut(y,x)){
+
+					for(int i=0; i < racine.size(); i++){
+						if(racine.get(i).equals(elm.adj.get(0)) || racine.get(i).equals(elm.adj.get(1))){
+							racine.get(i).adj.remove(elm);
+							System.out.println("Supp adj");
+						}
 					}
 
-					// D
-					if(x+1 < n.colonnes() && !n.aMur(y,x+1)){
-						adj.add(new Coords(x+1,y));
-					}else{
-						c2+=1;
-					}
-
-					// B
-					if(y+1 < n.lignes() && !n.aMur(y+1,x)){
-						adj.add(new Coords(x,y+1));
-
-					}else{
-						c2+=1;
-						c1+=1;
-					}
-
-					// H
-					if(y-1 >= 0 && !n.aMur(y-1,x)){
-						adj.add(new Coords(x,y-1));
-					}else{
-						c1+=1;
-						c2+=1;
-					}
-
-					if((c1 < 2 && c2 < 2) || n.aBut(y,x)){
-						racine.add(new Graphe(new Coords(x,y), adj));
-					}
+					racine.remove(elm);
+					n.fixerMarque(ROUGE,elm.coords.y,elm.coords.x);
+					tot=0;
 				}
 			}
+			tot++;
 		}
+
+	}
+
+	private void ajoutAvisiter(ArrayList<Graphe> aVisiter, ArrayList<Graphe> visite, Graphe gElm){
+		for(int i = 0; i < aVisiter.size(); i++){
+			if(aVisiter.get(i).coords.x == gElm.coords.x && aVisiter.get(i).coords.y == gElm.coords.y){
+				return;
+			}
+		}
+		for(int i = 0; i < visite.size(); i++){
+			if(visite.get(i).coords.x == gElm.coords.x && visite.get(i).coords.y == gElm.coords.y){
+				return;
+			}
+		}
+		aVisiter.add(gElm);
+	}
+	public void creationGraphe(ArrayList<Graphe> racine, Niveau n){
+		ArrayList<Graphe> aVisiter = new ArrayList<>();
+		ArrayList<Graphe> visite = new ArrayList<>();
+
+		aVisiter.add(new Graphe(new Coords(n.pousseurC,n.pousseurL)));
+
+		while (!aVisiter.isEmpty()){
+
+			int x = aVisiter.get(0).coords.x;
+			int y = aVisiter.get(0).coords.y;
+
+			if(!n.aMur(y,x)){
+
+				ArrayList<Graphe> adj = new ArrayList<>();
+				if(x-1 >= 0 && !n.aMur(y,x-1)){
+					Graphe c = new Graphe(new Coords(x-1,y));
+					adj.add(c);
+					ajoutAvisiter(aVisiter,visite,c);
+				}
+				if(x+1 < n.colonnes() && !n.aMur(y,x+1)){
+					Graphe c = new Graphe(new Coords(x+1,y));
+					adj.add(c);
+					ajoutAvisiter(aVisiter,visite,c);
+				}
+				if(y+1 < n.lignes() && !n.aMur(y+1,x)){
+					Graphe c = new Graphe(new Coords(x,y+1));
+					adj.add(c);
+					ajoutAvisiter(aVisiter,visite,c);
+				}
+				if(y-1 >= 0 && !n.aMur(y-1,x)){
+					Graphe c = new Graphe(new Coords(x,y-1));
+					adj.add(c);
+					ajoutAvisiter(aVisiter,visite,c);
+				}
+
+				Graphe nouvG = new Graphe(new Coords(x,y));
+				nouvG.adj=adj;
+				racine.add(nouvG);
+			}
+
+			visite.add(aVisiter.remove(0));
+		}
+
+
 	}
 
 
@@ -175,7 +259,7 @@ class IAAssistance extends IA {
 		for(int i =0; i<racine.size(); i++){
 			System.out.format("Coords : x%d,y%d\n", racine.get(i).coords.x,racine.get(i).coords.y );
 		}
-		System.out.println("Taille graphe perso : " + racine.size());
+		System.out.println("Taille graphe : " + racine.size());
 
 	}
 }

@@ -32,7 +32,8 @@ import Structures.Sequence;
 import java.util.logging.Logger;
 
 public abstract class IA {
-	private Jeu jeu;
+	//private Jeu jeu;
+	public Jeu jeu;
 	Niveau niveau;
 
 	public static IA nouvelle(Jeu j) {

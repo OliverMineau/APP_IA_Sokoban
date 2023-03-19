@@ -39,6 +39,7 @@ class AnimationJeuAutomatique extends Animation {
 		super(lenteur, c);
 		joueur = j;
 		control = c;
+
 	}
 
 	@Override
@@ -49,5 +50,6 @@ class AnimationJeuAutomatique extends Animation {
 			Configuration.erreur("Bug : l'IA n'a joué aucun coup");
 		else
 			control.joue(enAttente.extraitTete());
+
 	}
 }

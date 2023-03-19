@@ -107,6 +107,7 @@ public class NiveauGraphique extends JComponent implements Observateur {
 				int x = colonne * largeurCase;
 				int y = ligne * hauteurCase;
 				int marque = n.marque(ligne, colonne);
+
 				// Tracé du sol
 				if (n.aBut(ligne, colonne))
 					tracer(drawable, but, x, y, largeurCase, hauteurCase);
