@@ -29,6 +29,7 @@ package Modele;
 import Global.Configuration;
 import Structures.Coords;
 import Structures.Graphe;
+import Structures.Noeud;
 import Structures.Sequence;
 
 import java.util.*;
@@ -37,6 +38,7 @@ class IAAssistance extends IA {
 	Random r;
 	final static int MARRON = 0xBB7755;
 	final static int ROUGE = 0xFF0000;
+	final static int VERT = 0x00FF00;
 
 
 	public IAAssistance() {
@@ -87,179 +89,113 @@ class IAAssistance extends IA {
 		//Niveau n = super.niveau;
 		Niveau n = jeu.niveau();
 
-		//Creation graphe des positions possibles du perso
-		ArrayList<Graphe> racinePerso = new ArrayList<>();
-		creationGraphe(racinePerso, n);
-		showGraph(racinePerso);
+		//Creation graphe de toutes les positions possibles du perso
+		Graphe grapheTotal = new Graphe();
+		Coords perso = new Coords(n.pousseurC,n.pousseurL);
+		creationGraphe(grapheTotal, n, perso,0);
+		showGraph(grapheTotal);
 
-		//Creation graphe des positions possibles des caisses
-		ArrayList<Graphe> racineCaisse = new ArrayList<>();
-		creationGrapheCaisse(racineCaisse, n);
-		showGraph(racineCaisse);
-		System.out.println("Caisses");
-
-
-
+		//Creation graphe des positions possibles du perso sans pousser de caisse
+		Graphe graphePerso = new Graphe();
+		perso = new Coords(n.pousseurC,n.pousseurL);
+		creationGraphe(graphePerso, n, perso,1);
+		showGraph(graphePerso);
 		return resultat;
 
 	}
 
-	public void recVerifCouloir(ArrayList<Graphe> racine, ArrayList<Graphe> supp, Graphe elm){
 
-		if(elm.adj.size() >1){
-			return;
-		} else{
-
-			for (int i=0; i < racine.size(); i++){
-
-			}
-
-		}
-	}
-
-	public void supprElm(ArrayList<Graphe> racine, Graphe elm){
-
-		//Chaque Noeud
-		for (int i =0; i< racine.size(); i++){
-
-			Graphe rElm = racine.get(i);
-			ArrayList<Graphe> rCoords = rElm.adj;
-
-			// Chaque Noeud adjacent
-			for (int j =0; j< rElm.adj.size(); j++){
-
-				// Si elem est adjacent
-				if(elm.coords.x == rCoords.get(j).coords.x && elm.coords.y == rCoords.get(j).coords.y){
-					System.out.format("Suppr(%d %d) %d,%d\n",rElm.coords.x,rElm.coords.y, elm.coords.x,elm.coords.y);
-					rCoords.remove(j);
-					System.out.format("nsize %d\n",rCoords.size());
-					break;
-				}
-			}
-		}
-		System.out.format("Suppr def %d,%d\n",elm.coords.x,elm.coords.y);
-		racine.remove(elm);
-	}
-
-	public void creationGrapheCaisse(ArrayList<Graphe> racine, Niveau n){
-
-		//Memes positions que le perso mais sans les coins et couloirs
-		creationGraphe(racine, n);
-
-		//Enlever les couloirs
-		int tot1 = 0;
-		while(tot1 < racine.size()){
-			Graphe elm = racine.get(tot1);
-			int x = elm.coords.x;
-			int y = elm.coords.y;
-
-			if (elm.adj.size() <= 1 && !n.aBut(y,x)){
-
-				supprElm(racine,elm);
-
-				racine.remove(elm);
-				n.fixerMarque(MARRON,elm.coords.y,elm.coords.x);
-				tot1 = 0;
-			}
-			tot1++;
-		}
-
-		//Enlever les coins
-		int tot = 0;
-		while(tot < racine.size()){
-			Graphe elm = racine.get(tot);
-			int x = elm.coords.x;
-			int y = elm.coords.y;
-
-			if(elm.coords.x == 6 && elm.coords.y == 9){
-				System.out.format("Len :%d\n",elm.adj.size());
-			}
-
-			if(elm.adj.size()==2) {
-				if(elm.adj.get(0).coords.x != elm.adj.get(1).coords.x && elm.adj.get(0).coords.y != elm.adj.get(1).coords.y && !n.aBut(y,x)){
-
-					for(int i=0; i < racine.size(); i++){
-						if(racine.get(i).equals(elm.adj.get(0)) || racine.get(i).equals(elm.adj.get(1))){
-							racine.get(i).adj.remove(elm);
-							System.out.println("Supp adj");
-						}
-					}
-
-					racine.remove(elm);
-					n.fixerMarque(ROUGE,elm.coords.y,elm.coords.x);
-					tot=0;
-				}
-			}
-			tot++;
-		}
-
-	}
-
-	private void ajoutAvisiter(ArrayList<Graphe> aVisiter, ArrayList<Graphe> visite, Graphe gElm){
+	private int ajoutAvisiter(ArrayList<Noeud> aVisiter, int x,int y){
 		for(int i = 0; i < aVisiter.size(); i++){
-			if(aVisiter.get(i).coords.x == gElm.coords.x && aVisiter.get(i).coords.y == gElm.coords.y){
-				return;
+			if(aVisiter.get(i).x == x && aVisiter.get(i).y == y){
+				return i;
 			}
 		}
-		for(int i = 0; i < visite.size(); i++){
-			if(visite.get(i).coords.x == gElm.coords.x && visite.get(i).coords.y == gElm.coords.y){
-				return;
-			}
-		}
-		aVisiter.add(gElm);
+		 return -1;
 	}
-	public void creationGraphe(ArrayList<Graphe> racine, Niveau n){
-		ArrayList<Graphe> aVisiter = new ArrayList<>();
-		ArrayList<Graphe> visite = new ArrayList<>();
+	public Noeud creationGraphe(Graphe g, Niveau n, Coords debut, int type){
+		Noeud caisse = null;
+		ArrayList<Noeud> aVisiter =  g.noeuds;
+		aVisiter.add(new Noeud(debut.x,debut.y));
 
-		aVisiter.add(new Graphe(new Coords(n.pousseurC,n.pousseurL)));
+		int ind = 0;
+		while (ind < aVisiter.size()){
 
-		while (!aVisiter.isEmpty()){
+			int x = aVisiter.get(ind).x;
+			int y = aVisiter.get(ind).y;
 
-			int x = aVisiter.get(0).coords.x;
-			int y = aVisiter.get(0).coords.y;
+			//Si la case n'est pas un mur
+			if(!n.aMur(y,x) && !(type == 1 && n.aCaisse(y,x))){
 
-			if(!n.aMur(y,x)){
+				if(type == 1)
+					n.fixerMarque(VERT,y,x);
+				else
+					n.fixerMarque(MARRON,y,x);
 
-				ArrayList<Graphe> adj = new ArrayList<>();
+				//Liste des adj (indexs)
+				ArrayList<Noeud> adj = aVisiter.get(ind).voisins;
 				if(x-1 >= 0 && !n.aMur(y,x-1)){
-					Graphe c = new Graphe(new Coords(x-1,y));
-					adj.add(c);
-					ajoutAvisiter(aVisiter,visite,c);
+					int nInd = ajoutAvisiter(aVisiter,x-1,y);
+					if(nInd == -1){
+						Noeud tmp = new Noeud(x-1,y);
+						aVisiter.add(tmp);
+						adj.add(tmp);
+					}else{
+						adj.add(aVisiter.get(nInd));
+					}
 				}
 				if(x+1 < n.colonnes() && !n.aMur(y,x+1)){
-					Graphe c = new Graphe(new Coords(x+1,y));
-					adj.add(c);
-					ajoutAvisiter(aVisiter,visite,c);
+					int nInd = ajoutAvisiter(aVisiter,x+1,y);
+					if(nInd == -1){
+						Noeud tmp = new Noeud(x+1,y);
+						aVisiter.add(tmp);
+						adj.add(tmp);
+					}else{
+						adj.add(aVisiter.get(nInd));
+					}
 				}
 				if(y+1 < n.lignes() && !n.aMur(y+1,x)){
-					Graphe c = new Graphe(new Coords(x,y+1));
-					adj.add(c);
-					ajoutAvisiter(aVisiter,visite,c);
+					int nInd = ajoutAvisiter(aVisiter,x,y+1);
+					if(nInd == -1){
+						Noeud tmp = new Noeud(x,y+1);
+						aVisiter.add(tmp);
+						adj.add(tmp);
+					}else{
+						adj.add(aVisiter.get(nInd));
+					}
 				}
 				if(y-1 >= 0 && !n.aMur(y-1,x)){
-					Graphe c = new Graphe(new Coords(x,y-1));
-					adj.add(c);
-					ajoutAvisiter(aVisiter,visite,c);
+					int nInd = ajoutAvisiter(aVisiter,x,y-1);
+					if(nInd == -1){
+						Noeud tmp = new Noeud(x,y-1);
+						aVisiter.add(tmp);
+						adj.add(tmp);
+					}else{
+						adj.add(aVisiter.get(nInd));
+					}
 				}
-
-				Graphe nouvG = new Graphe(new Coords(x,y));
-				nouvG.adj=adj;
-				racine.add(nouvG);
 			}
 
-			visite.add(aVisiter.remove(0));
+			if(n.aCaisse(y,x)){
+				caisse = aVisiter.get(ind);
+			}
+
+			ind++;
 		}
 
-
+		return caisse;
 	}
 
 
-	public void showGraph(ArrayList<Graphe> racine){
-		for(int i =0; i<racine.size(); i++){
-			System.out.format("Coords : x%d,y%d\n", racine.get(i).coords.x,racine.get(i).coords.y );
+	public void showGraph(Graphe graphe){
+		for(int i =0; i<graphe.noeuds.size(); i++){
+			System.out.format("Coords : x%d,y%d\n", graphe.noeuds.get(i).x, graphe.noeuds.get(i).y);
+
+			for(int j =0; j<graphe.noeuds.get(i).voisins.size(); j++){
+				System.out.format("\tvoisin : x%d,y%d\n", graphe.noeuds.get(i).voisins.get(j).x, graphe.noeuds.get(i).voisins.get(j).y);
+			}
 		}
-		System.out.println("Taille graphe : " + racine.size());
+		System.out.println("Taille graphe : " + graphe.noeuds.size());
 
 	}
 }

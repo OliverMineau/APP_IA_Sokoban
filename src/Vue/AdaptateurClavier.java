@@ -64,6 +64,9 @@ public class AdaptateurClavier extends KeyAdapter {
 			case KeyEvent.VK_ESCAPE:
 				control.toucheClavier("Full");
 				break;
+			case KeyEvent.VK_N:
+				control.toucheClavier("N");
+				break;
 		}
 	}
 }

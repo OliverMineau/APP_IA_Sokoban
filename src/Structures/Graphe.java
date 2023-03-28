@@ -5,13 +5,10 @@ import java.util.List;
 
 public class Graphe {
 
-    public Coords coords;
-    public Boolean estCoin;
-    public Boolean estCoteCoin;
-    public ArrayList<Graphe> adj;
+    public ArrayList<Noeud> noeuds;
 
-    public Graphe(Coords coords){
-        this.coords=coords;
+    public Graphe(){
+        this.noeuds= new ArrayList<>();
     }
 
 
