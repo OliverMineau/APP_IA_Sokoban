@@ -32,6 +32,7 @@ import Structures.Graphe;
 import Structures.Noeud;
 import Structures.Sequence;
 
+import javax.swing.*;
 import java.util.*;
 
 class IAAssistance extends IA {
@@ -40,6 +41,7 @@ class IAAssistance extends IA {
 	final static int ROUGE = 0xFF0000;
 	final static int VERT = 0x00FF00;
 
+	boolean retour=true;
 
 	public IAAssistance() {
 		r = new Random();
@@ -54,52 +56,78 @@ class IAAssistance extends IA {
 	* */
 	@Override
 	public Sequence<Coup> joue() {
-		Sequence<Coup> resultat = Configuration.nouvelleSequence();
-		int pousseurL = niveau.lignePousseur();
-		int pousseurC = niveau.colonnePousseur();
-
-		// Ici, a titre d'exemple, on peut construire une séquence de coups
-		// qui sera jouée par l'AnimationJeuAutomatique
-		int nb = r.nextInt(5)+1;
-		Configuration.info("Entrée dans la méthode de jeu de l'IA");
-		Configuration.info("Construction d'une séquence de " + nb + " coups");
-		for (int i = 0; i < nb; i++) {
-			// Mouvement du pousseur
-			Coup coup = new Coup();
-			boolean libre = false;
-			while (!libre) {
-				int nouveauL = r.nextInt(niveau.lignes());
-				int nouveauC = r.nextInt(niveau.colonnes());
-				if (niveau.estOccupable(nouveauL, nouveauC)) {
-					Configuration.info("Téléportation en (" + nouveauL + ", " + nouveauC + ") !");
-					coup.deplacementPousseur(pousseurL, pousseurC, nouveauL, nouveauC);
-					//coup.ajouteMarque(pousseurL, pousseurC, 0xBB7755);
-
-					resultat.insereQueue(coup);
-					pousseurL = nouveauL;
-					pousseurC = nouveauC;
-					libre = true;
-				}
-			}
-		}
-		Configuration.info("Sortie de la méthode de jeu de l'IA");
 
 
 		//Debut IA
 		//Niveau n = super.niveau;
 		Niveau n = jeu.niveau();
 
-		//Creation graphe de toutes les positions possibles du perso
-		Graphe grapheTotal = new Graphe();
-		Coords perso = new Coords(n.pousseurC,n.pousseurL);
-		creationGraphe(grapheTotal, n, perso,0);
-		showGraph(grapheTotal);
+		Sequence<Coup> resultat = Configuration.nouvelleSequence();
 
-		//Creation graphe des positions possibles du perso sans pousser de caisse
-		Graphe graphePerso = new Graphe();
-		perso = new Coords(n.pousseurC,n.pousseurL);
-		creationGraphe(graphePerso, n, perso,1);
-		showGraph(graphePerso);
+		if(retour){
+			//Creation graphe de toutes les positions possibles du perso
+			Graphe grapheTotal = new Graphe();
+			Coords perso = new Coords(n.pousseurC,n.pousseurL);
+			creationGraphe(grapheTotal, n, perso,0);
+			showGraph(grapheTotal);
+
+			//Creation graphe des positions possibles du perso sans pousser de caisse
+			/*Graphe graphePerso = new Graphe();
+			perso = new Coords(n.pousseurC,n.pousseurL);
+			creationGraphe(graphePerso, n, perso,1);
+			showGraph(graphePerso);*/
+
+			Noeud pousseur = null;
+			Noeud caisse = null;
+			for (int i =0; i < grapheTotal.noeuds.size(); i++){
+				Noeud noeud = grapheTotal.noeuds.get(i);
+				if(noeud.x == niveau.colonnePousseur() && noeud.y == niveau.lignePousseur()){
+					pousseur = noeud;
+				} else if (noeud.x == grapheTotal.caisse.x && noeud.y == grapheTotal.caisse.y) {
+					caisse = noeud.voisins.get(1);
+				}
+			}
+
+			ArrayList<Noeud> etapes = dijkstra(pousseur, caisse, grapheTotal, n);
+
+
+			int pousseurL = niveau.lignePousseur();
+			int pousseurC = niveau.colonnePousseur();
+
+			// Ici, a titre d'exemple, on peut construire une séquence de coups
+			// qui sera jouée par l'AnimationJeuAutomatique
+			Configuration.info("Entrée dans la méthode de jeu de l'IA");
+
+			for (int i = 0; i < etapes.size()-1; i++) {
+				// Mouvement du pousseur
+				Coup coup = new Coup();
+
+				/*int y =  etapes.get(i+1).y;
+				int x = etapes.get(i+1).x;
+				int dirx = Integer.compare(x, etapes.get(i).x);
+				int diry = Integer.compare(y, etapes.get(i).y);
+
+				if(n.aCaisse(y,x)){
+					System.out.println(dirx + " " + diry);
+					coup.deplacementCaisse(y, x, y + diry, x + dirx );
+					resultat.insereQueue(coup);
+				}*/
+
+				coup.deplacementPousseur(pousseurL, pousseurC, etapes.get(i).y, etapes.get(i).x);
+				pousseurL = etapes.get(i).y;
+				pousseurC = etapes.get(i).x;
+				resultat.insereQueue(coup);
+
+			}
+			Configuration.info("Sortie de la méthode de jeu de l'IA");
+
+		}else{
+			System.out.println("Fin");
+		}
+
+
+		retour=!retour;
+
 		return resultat;
 
 	}
@@ -127,10 +155,18 @@ class IAAssistance extends IA {
 			//Si la case n'est pas un mur
 			if(!n.aMur(y,x) && !(type == 1 && n.aCaisse(y,x))){
 
-				if(type == 1)
+				if(n.aCaisse(y,x)){
+					g.caisse = new Coords(x,y);
+				}
+
+				if(n.aPousseur(y,x)){
+					g.perso = new Coords(x,y);
+				}
+
+				/*if(type == 1)
 					n.fixerMarque(VERT,y,x);
 				else
-					n.fixerMarque(MARRON,y,x);
+					n.fixerMarque(MARRON,y,x);*/
 
 				//Liste des adj (indexs)
 				ArrayList<Noeud> adj = aVisiter.get(ind).voisins;
@@ -184,6 +220,68 @@ class IAAssistance extends IA {
 		}
 
 		return caisse;
+	}
+
+
+
+	public ArrayList<Noeud> dijkstra(Noeud depart, Noeud arrivee, Graphe graphe, Niveau n){
+
+		//Initialisation des distances
+		double distance[] = new double[graphe.noeuds.size()];
+		Arrays.fill(distance, Double.POSITIVE_INFINITY);
+		distance[graphe.noeuds.indexOf(depart)] = 0;
+
+		ArrayList<Noeud> P = new ArrayList<>();
+
+		int pred[] = new int[graphe.noeuds.size()];
+		Arrays.fill(pred, -1);
+
+		//Tant qu'il existe un sommet hors de P
+		while (P.size() < graphe.noeuds.size()){
+
+			//Trouver le minimum
+			double min = Double.POSITIVE_INFINITY;
+			int sommet = -1;
+			for (int i = 0; i < distance.length; i++){
+				if(!P.contains(graphe.noeuds.get(i)) && min > distance[i]){
+					min = distance[i];
+					sommet=i;
+				}
+			}
+
+			//Ajout du sommet
+			P.add(graphe.noeuds.get(sommet));
+
+			Noeud a = graphe.noeuds.get(sommet);
+			for(int j = 0; j < a.voisins.size(); j++){
+				if(!P.contains(a.voisins.get(j))){
+					if(distance[graphe.noeuds.indexOf(a.voisins.get(j))] > distance[sommet]+1){
+						distance[graphe.noeuds.indexOf(a.voisins.get(j))]=distance[sommet]+1;
+						pred[graphe.noeuds.indexOf(a.voisins.get(j))]=sommet;
+					}
+				}
+			}
+		}
+
+		ArrayList<Noeud> etapes = new ArrayList<>();
+		int i = graphe.noeuds.indexOf(arrivee);
+		int dep = graphe.noeuds.indexOf(depart);
+
+		while (i!=dep){
+
+			Noeud elm = graphe.noeuds.get(i);
+			int x = elm.x;
+			int y = elm.y;
+			n.fixerMarque(ROUGE,y,x);
+			System.out.println("Etapes : " + x + " " + y);
+			etapes.add(0,elm);
+			i = pred[i];
+		}
+		int x = graphe.noeuds.get(i).x;
+		int y = graphe.noeuds.get(i).y;
+		n.fixerMarque(ROUGE,y,x);
+
+		return etapes;
 	}
 
 
