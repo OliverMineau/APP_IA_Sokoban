@@ -87,9 +87,10 @@ class IAAssistance extends IA {
 				}
 			}
 
-			ArrayList<Noeud> etapes = dijkstra(pousseur, caisse, gTotal, n);
+			//ArrayList<Noeud> etapes = dijkstra(pousseur, caisse, gTotal, n);
+			ArrayList<Noeud> etapes = heuristique(gTotal, pousseur, caisse);
 
-
+			//dijkstra(Noeud depart, Noeud arrivee, Graphe g, Niveau n)
 			int pousseurL = niveau.lignePousseur();
 			int pousseurC = niveau.colonnePousseur();
 
@@ -297,7 +298,7 @@ class IAAssistance extends IA {
 	}
 
 
-
+// DEBUT A* ALGORITHM
 	public int compareParHeuristique(Noeud n1, Noeud n2){
         if(n1.heuristique < n2.heuristique) {
             return -1;
@@ -317,17 +318,16 @@ class IAAssistance extends IA {
 		Collections.reverse(chemin);
 	}
 
-	/*	public double distance(Noeud a, Noeud b){
+		public double distance(Noeud a, Noeud b){
 			int x = Math.abs(a.x - b.x);
 			int y = Math.abs(a.y - b.y);
 			return Math.sqrt(x*x + y*y);
 		}
-	*/
-	/*
-	public ArrayList<Noeud> heuristique(ArrayList<Noeud> g, Noeud depart, Noeud objectif) {
-		// contient les noeuds étudiés
+
+	public ArrayList<Noeud> heuristique(Graphe g, Noeud depart, Noeud objectif) {
+		// contient au fur et à mesure les noeuds issue de openList avec le coût total le plus faible
 		Queue<Noeud> closedList = new LinkedList<>();
-		// contient les noeuds qui ont été considérés comme faisant partie du chemin solution
+		// contient tous les noeuds qui ont besoin d'être étudiés
 		PriorityQueue<Noeud> openList = new PriorityQueue<>(compareParHeuristique(depart, objectif));
 		openList.add(depart);
 
@@ -339,20 +339,20 @@ class IAAssistance extends IA {
 			}
 
 			for (int v = 0; v < u.voisins.size(); v++) {
-				if(g.contains(u.voisins.get(v))) {
-				// BLOQUÉ ICI
-					if (!closedList.contains(v) && !openList.contains(v)){
-						v.cout = u.cout + 1;
-						v.heuristique = v.cout + distance(v, objectif);
+				if(g.noeuds.contains(u.voisins.get(v))) {
+					if (!closedList.contains(u.voisins.get(v)) && !openList.contains(u.voisins.get(v))){
+						u.voisins.get(v).cout = u.cout + 1;
+						u.voisins.get(v).heuristique = u.voisins.get(v).cout + distance(u.voisins.get(v), objectif);
+						u.voisins.get(v).parent = u; // Noeud courant u est parent du/des noeud(s) voisin(s)
+						openList.add(u.voisins.get(v));
 					}
 				}
-				openList.add(v);
 			}
 			closedList.add(u);
 		}
 		throw new RuntimeException("Impossible d'accéder à l'objectif");
 	}
-*/
+
 
 }
 
