@@ -40,7 +40,7 @@ public class Sokoban {
 
 	public static void main(String[] args) {
 		InputStream in;
-		String levels = "Tests";
+		String levels = "Tests1";
 		in = Configuration.ouvre("Niveaux/"+ levels +".txt");
 		Configuration.info("Niveaux trouvés");
 
