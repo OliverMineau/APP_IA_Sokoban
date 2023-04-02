@@ -53,6 +53,9 @@ public abstract class IA {
 			case "Assistance":
 				resultat = new IAAssistance();
 				break;
+			case "Sokoban":
+				resultat = new IASokoban();
+				break;
 			default:
 				Configuration.erreur("IA de type " + type + " non supportée");
 		}

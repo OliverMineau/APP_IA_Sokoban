@@ -102,9 +102,15 @@ class IAAssistance extends IA {
 			ArrayList<Noeud> etapes = null;
 
 			if(butDuPerso != null){
+
+				if(butDuPerso.x == pousseur.x && butDuPerso.y == pousseur.y){
+					System.out.println("Meme endroit donc peut etre a cote de caisse");
+					return aCoteDeCaisse(n, resultat);
+				}
+
 				System.out.println("Test chemin entre : " + pousseur.x + "," + pousseur.y + " et " + butDuPerso.x + "," +  butDuPerso.y);
 				System.out.println("Caisse : " + caisse.x + "," + caisse.y + " et a caisse " + n.aCaisse(caisse.y,caisse.x));
-				etapes = dijkstra(pousseur, butDuPerso, gTotal, n);
+				etapes = dijkstra(pousseur, butDuPerso, gTotal, n, 0);
 			}
 
 			if(etapes == null){
@@ -114,7 +120,7 @@ class IAAssistance extends IA {
 				for(int i=0; i < caisse.voisins.size(); i++){
 
 					System.out.println("Test chemin entre : " + pousseur.x + "," + pousseur.y + " et " + caisse.voisins.get(i).x + "," +  caisse.voisins.get(i).y);
-					etapes = dijkstra(pousseur, caisse.voisins.get(i), gTotal, n);
+					etapes = dijkstra(pousseur, caisse.voisins.get(i), gTotal, n, 0);
 
 					if(etapes != null && etapes.size()>0){
 						System.out.println("Chemin existant pousseur caisse (pas le bon)");
@@ -167,47 +173,7 @@ class IAAssistance extends IA {
 
 		}else{
 
-			//Si caisse on pousse
-			int x=0,y=0;
-			if(n.aCaisse(n.pousseurL+1,n.pousseurC)){
-				x=0;
-				y=1;
-			}
-			if(n.aCaisse(n.pousseurL-1,n.pousseurC)){
-				x=0;
-				y=-1;
-			}
-			if(n.aCaisse(n.pousseurL,n.pousseurC+1)){
-				x=1;
-				y=0;
-			}
-			if(n.aCaisse(n.pousseurL,n.pousseurC-1)){
-				x=-1;
-				y=0;
-			}
-
-			if(x!=0 || y!=0){
-
-				//Regarder si on peut aller derriere la caisse
-                /*for (int i = 0; i < gPerso.noeuds.size(); i++) {
-					Noeud noeud = gPerso.noeuds.get(i);
-
-					for (int j = 0; < caisse.voisins.size(); j++){
-
-					}
-				}*/
-
-
-				//Si on ne peut plus pousser
-				if(n.pousseurL+2*y >= n.l || n.pousseurC+2*x >= n.c)
-					return null;
-
-				Coup coup = new Coup();
-				coup.deplacementCaisse(n.pousseurL+y,n.pousseurC+x, n.pousseurL+2*y,n.pousseurC+2*x);
-				//caisse.x = n.pousseurC+x;
-				//caisse.y = n.pousseurL+y;
-				resultat.insereQueue(coup);
-			}
+			aCoteDeCaisse(n, resultat);
 
 			System.out.println("Fin");
 		}
@@ -219,6 +185,52 @@ class IAAssistance extends IA {
 
 	}
 
+
+	public Sequence<Coup> aCoteDeCaisse(Niveau n,Sequence<Coup> resultat){
+		//Si caisse on pousse
+		int x=0,y=0;
+		if(n.aCaisse(n.pousseurL+1,n.pousseurC)){
+			x=0;
+			y=1;
+		}
+		if(n.aCaisse(n.pousseurL-1,n.pousseurC)){
+			x=0;
+			y=-1;
+		}
+		if(n.aCaisse(n.pousseurL,n.pousseurC+1)){
+			x=1;
+			y=0;
+		}
+		if(n.aCaisse(n.pousseurL,n.pousseurC-1)){
+			x=-1;
+			y=0;
+		}
+
+		if(x!=0 || y!=0){
+
+			//Regarder si on peut aller derriere la caisse
+                /*for (int i = 0; i < gPerso.noeuds.size(); i++) {
+					Noeud noeud = gPerso.noeuds.get(i);
+
+					for (int j = 0; < caisse.voisins.size(); j++){
+
+					}
+				}*/
+
+
+			//Si on ne peut plus pousser
+			if(n.pousseurL+2*y >= n.l || n.pousseurC+2*x >= n.c)
+				return null;
+
+			Coup coup = new Coup();
+			coup.deplacementCaisse(n.pousseurL+y,n.pousseurC+x, n.pousseurL+2*y,n.pousseurC+2*x);
+			//caisse.x = n.pousseurC+x;
+			//caisse.y = n.pousseurL+y;
+			resultat.insereQueue(coup);
+		}
+
+		return resultat;
+	}
 
 	private int ajoutAvisiter(ArrayList<Noeud> aVisiter, int x, int y) {
 		for (int i = 0; i < aVisiter.size(); i++) {
@@ -311,7 +323,7 @@ class IAAssistance extends IA {
 	}
 
 
-	public ArrayList<Noeud> dijkstra(Noeud depart, Noeud arrivee, Graphe g, Niveau n) {
+	public ArrayList<Noeud> dijkstra(Noeud depart, Noeud arrivee, Graphe g, Niveau n, int type) {
 
 		//Initialisation des distances
 		double distance[] = new double[g.noeuds.size()];
@@ -343,6 +355,12 @@ class IAAssistance extends IA {
 
 			Noeud a = g.noeuds.get(sommet);
 			for (int j = 0; j < a.voisins.size(); j++) {
+
+				if(type==1){
+					if(a.voisins.get(j).voisins.size() <= 2){
+						continue;
+					}
+				}
 				if (!P.contains(a.voisins.get(j)) && !n.aCaisse(a.voisins.get(j).y,a.voisins.get(j).x)) {
 					if (distance[g.noeuds.indexOf(a.voisins.get(j))] > distance[sommet] + 1) {
 
@@ -394,15 +412,17 @@ class IAAssistance extends IA {
 	}
 
 	Noeud caisseVersBut(Noeud depart, Noeud arrivee, Graphe g, Niveau n){
-		ArrayList<Noeud> etapes = dijkstra(depart, arrivee, g, n);
+		ArrayList<Noeud> etapes = dijkstra(depart, arrivee, g, n, 1);
 		//Si pas possible
 		if(etapes == null || etapes.size() == 0){
 			System.out.println("Pas d'etapes caisse but");
 			return null;
 		}
 
-		int dirx = Integer.compare(depart.x, etapes.get(etapes.size()-1).x);
-		int diry = Integer.compare(depart.y, etapes.get(etapes.size()-1).y);
+		int dirx = Integer.compare(depart.x, etapes.get(0).x);
+		int diry = Integer.compare(depart.y, etapes.get(0).y);
+		System.out.println("Caisse : Premiere etape : " + etapes.get(etapes.size()-1).x + "," + etapes.get(etapes.size()-1).y);
+
 
 		for (int i = 0; i < depart.voisins.size(); i++){
 			Noeud voisin = depart.voisins.get(i);
@@ -432,6 +452,14 @@ class IAAssistance extends IA {
 		System.out.println("Taille g : " + g.noeuds.size());
 
 	}
+
+
+
+
+
+
+
+
 
 /*
 // DEBUT A* ALGORITHM
