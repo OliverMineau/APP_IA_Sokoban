@@ -84,11 +84,24 @@ class IAAssistance extends IA {
 					pousseur = noeud;
 				} else if (noeud.x == gTotal.caisse.x && noeud.y == gTotal.caisse.y) {
 					caisse = noeud.voisins.get(1);
+					caisse = noeud;
 				}
 			}
 
-			//ArrayList<Noeud> etapes = dijkstra(pousseur, caisse, gTotal, n);
-			ArrayList<Noeud> etapes = heuristique(gTotal, pousseur, caisse);
+			if(caisse == null){
+				System.out.println("PAS de Caisses");
+				return null;
+			}
+
+			ArrayList<Noeud> etapes = null;
+			for(int i=0; i < caisse.voisins.size(); i++){
+
+				etapes = dijkstra(pousseur, caisse.voisins.get(i), gTotal, n);
+
+				if(etapes.size()>0){
+					break;
+				}
+			}
 
 			//dijkstra(Noeud depart, Noeud arrivee, Graphe g, Niveau n)
 			int pousseurL = niveau.lignePousseur();
@@ -98,7 +111,8 @@ class IAAssistance extends IA {
 			// qui sera jouée par l'AnimationJeuAutomatique
 			Configuration.info("Entrée dans la méthode de jeu de l'IA");
 
-			for (int i = 0; i < etapes.size() - 1; i++) {
+			// -1 ???????????????
+			for (int i = 0; i < etapes.size(); i++) {
 				// Mouvement du pousseur
 				Coup coup = new Coup();
 
@@ -118,10 +132,42 @@ class IAAssistance extends IA {
 				pousseurC = etapes.get(i).x;
 				resultat.insereQueue(coup);
 
+
+
 			}
 			Configuration.info("Sortie de la méthode de jeu de l'IA");
 
-		} else {
+		}else{
+
+			//Si caisse on pousse
+			int x=0,y=0;
+			if(n.aCaisse(n.pousseurL+1,n.pousseurC)){
+				x=0;
+				y=1;
+			}
+			if(n.aCaisse(n.pousseurL-1,n.pousseurC)){
+				x=0;
+				y=-1;
+			}
+			if(n.aCaisse(n.pousseurL,n.pousseurC+1)){
+				x=1;
+				y=0;
+			}
+			if(n.aCaisse(n.pousseurL,n.pousseurC-1)){
+				x=-1;
+				y=0;
+			}
+
+			if(x!=0 || y!=0){
+
+				if(n.pousseurL+2*y >= n.l || n.pousseurC+2*x >= n.c)
+					return null;
+
+				Coup coup = new Coup();
+				coup.deplacementCaisse(n.pousseurL+y,n.pousseurC+x, n.pousseurL+2*y,n.pousseurC+2*x);
+				resultat.insereQueue(coup);
+			}
+
 			System.out.println("Fin");
 		}
 
@@ -274,7 +320,14 @@ class IAAssistance extends IA {
 			int y = elm.y;
 			n.fixerMarque(ROUGE, y, x);
 			System.out.println("Etapes : " + x + " " + y);
-			etapes.add(0, elm);
+
+			etapes.add(0,elm);
+
+			if(n.aCaisse(elm.y,elm.x)){
+				etapes.clear();
+				break;
+			}
+
 			i = pred[i];
 		}
 		int x = g.noeuds.get(i).x;
@@ -297,7 +350,7 @@ class IAAssistance extends IA {
 
 	}
 
-
+/*
 // DEBUT A* ALGORITHM
 	public int compareParHeuristique(Noeud n1, Noeud n2){
         if(n1.heuristique < n2.heuristique) {
@@ -353,6 +406,6 @@ class IAAssistance extends IA {
 		throw new RuntimeException("Impossible d'accéder à l'objectif");
 	}
 
-
+*/
 }
 
