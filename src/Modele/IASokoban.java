@@ -36,7 +36,6 @@ import java.util.Random;
 import static java.lang.Math.*;
 
 class IASokoban extends IA {
-	Random r;
 	final static int MARRON = 0xBB7755;
 	final static int ROUGE = 0xFF0000;
 	final static int VERT = 0x00FF00;
@@ -44,13 +43,15 @@ class IASokoban extends IA {
 	boolean retour = true;
 
 
+
 	public IASokoban() {
-		r = new Random();
+
 	}
 
 
 	@Override
 	public Sequence<Coup> joue() {
+
 
 		//Debut IA
 		//Niveau n = super.niveau;
@@ -85,7 +86,7 @@ class IASokoban extends IA {
 			//Si la caisse ne peut pas aller vers le but
 			if(butDuPerso == null){
 				System.out.println("Le pousseur ne peut pas se placer " +
-						" pour que la caisse (" + gTotal.caisse.x + "," + gTotal.caisse.y + ")" +
+						"pour que la caisse (" + gTotal.caisse.x + "," + gTotal.caisse.y + ")" +
 						" arrive au but (" + gTotal.but.x + "," + gTotal.but.y + ")");
 				System.out.println("Niveau impossible : passer au niveau suivant\n");
 				niveauSuivant();
@@ -95,20 +96,20 @@ class IASokoban extends IA {
 				System.out.println("Le pousseur doit se placer à ("+ butDuPerso.x + "," + butDuPerso.y + ")" +
 						" pour que la caisse (" + gTotal.caisse.x + "," + gTotal.caisse.y + ")" +
 						" arrive au but (" + gTotal.but.x + "," + gTotal.but.y + ")");
-			}
 
+				//Si la position du perso est egale à la position de BUTDUPOUSSEUR
+				if(butDuPerso.x == gTotal.perso.x && butDuPerso.y == gTotal.perso.y){
+					System.out.println("Le pousseur est a la bonne position");
+
+					//Calculer comment pousser la caisse
+					return aCoteDeCaisse(n, resultat);
+				}
+			}
 
 
 			//Liste des etapes/coups que le pousseur doit suivre
 			ArrayList<NoeudV2> etapes;
 
-			//Si la position du perso est egale à la position de BUTDUPOUSSEUR
-			if(butDuPerso.x == gTotal.perso.x && butDuPerso.y == gTotal.perso.y){
-				System.out.println("Le pousseur est a la bonne position");
-
-				//Calculer comment pousser la caisse
-				return aCoteDeCaisse(n, resultat);
-			}
 
 			////System.out.println("Test chemin entre : " + gTotal.perso.x + "," + gTotal.perso.y + " et " + butDuPerso.x + "," +  butDuPerso.y);
 			////System.out.println("Caisse : " + gTotal.caisse.x + "," + gTotal.caisse.y + " et a caisse " + n.aCaisse(gTotal.caisse.y,gTotal.caisse.x));
@@ -213,7 +214,9 @@ class IASokoban extends IA {
 
 	public void niveauSuivant(){
 		niveau.nbCaissesSurBut = niveau.nbButs;
+
 		jeu.prochainNiveau();
+
 	}
 
 	public Sequence<Coup> aCoteDeCaisse(Niveau n,Sequence<Coup> resultat){
@@ -400,21 +403,20 @@ class IASokoban extends IA {
 				etapes.add(0,tmp);
 				if(type==1 && n.marque(tmp.y,tmp.x)!=0)
 					n.fixerMarque(ROUGE,tmp.y,tmp.x);
-				else
 
-					//Ajouter les etapes
-					while(true){
-						if(tmp == depart || tmp == null){
-							etapes.remove(0);
-							return etapes;
-						}
-
-						etapes.add(0,tmp.parent);
-						if(type==1)
-							n.fixerMarque(ROUGE,tmp.parent.y,tmp.parent.x);
-
-						tmp = tmp.parent;
+				//Ajouter les etapes
+				while(true){
+					if(tmp == depart || tmp == null){
+						etapes.remove(0);
+						return etapes;
 					}
+
+					etapes.add(0,tmp.parent);
+					if(type==1)
+						n.fixerMarque(ROUGE,tmp.parent.y,tmp.parent.x);
+
+					tmp = tmp.parent;
+				}
 			}
 
 			ouvertList.remove(courant);
