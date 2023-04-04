@@ -10,6 +10,8 @@ public class NoeudV2 {
     public double f = 0;
     public double g = 0;
 
+    public boolean estCouloir = false;
+
     public NoeudV2 parent = null;
 
     public NoeudV2 gauche = null;
@@ -24,10 +26,14 @@ public class NoeudV2 {
 
     public ArrayList<NoeudV2> voisins(){
         ArrayList<NoeudV2> nds = new ArrayList<>();
-        nds.add(gauche);
-        nds.add(droit);
-        nds.add(haut);
-        nds.add(bas);
+        if(gauche!=null)
+            nds.add(gauche);
+        if(droit!=null)
+            nds.add(droit);
+        if(haut!=null)
+            nds.add(haut);
+        if(bas!=null)
+            nds.add(bas);
         return  nds;
     }
 
@@ -56,7 +62,6 @@ public class NoeudV2 {
     }
 
     public double heuristique(NoeudV2 arr){
-
         return Math.pow(Math.abs(this.x - arr.x),2) + Math.pow(Math.abs(this.y - arr.y),2);
     }
 

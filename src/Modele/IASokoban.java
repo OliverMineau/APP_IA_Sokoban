@@ -33,8 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.pow;
+import static java.lang.Math.*;
 
 class IASokoban extends IA {
 	Random r;
@@ -44,14 +43,10 @@ class IASokoban extends IA {
 
 	boolean retour = true;
 
-	Noeud caisse;
-	Noeud but;
 
 	public IASokoban() {
 		r = new Random();
 	}
-
-	//Fonction de départ de l'IA de l'APP ALGO6
 
 
 	@Override
@@ -63,128 +58,140 @@ class IASokoban extends IA {
 
 		Sequence<Coup> resultat = Configuration.nouvelleSequence();
 
-		/*GrapheV2 gTotal = new GrapheV2(n.c,n.l);
-		Coords perso = new Coords(n.pousseurC, n.pousseurL);
-		creationGraphe(gTotal, n, perso, 0);
-		showGraph(gTotal);
-
-		//ArrayList<NoeudV2> et = aStar(gTotal.tableau[gTotal.caisse.y][gTotal.caisse.x],gTotal.tableau[gTotal.but.y][gTotal.but.x],gTotal, n, 1);
-		ArrayList<NoeudV2> et = aStar(gTotal.tableau[perso.y][perso.x],gTotal.tableau[gTotal.caisse.y][gTotal.caisse.x],gTotal, n, 0);
-		System.out.println("Size : " + et.size());
-
-		for (NoeudV2 e:et) {
-			System.out.println("Etape : " + e.x + "," + e.y);
-			n.fixerMarque(VERT,e.y,e.x);
-		}*/
-
 
 		if (retour) {
-			//Creation g de toutes les positions possibles du perso
+
+			//Creation du graphe
 			GrapheV2 gTotal = new GrapheV2(n.c,n.l);
 			Coords perso = new Coords(n.pousseurC, n.pousseurL);
 			creationGraphe(gTotal, n, perso, 0);
-			//showGraph(gTotal);
 
-			/*Noeud pousseur = null;
-			for (int i = 0; i < gTotal.noeuds.size(); i++) {
-				NoeudV2 noeud = gTotal.noeuds.get(i);
-				if (noeud.x == n.colonnePousseur() && noeud.y == n.lignePousseur()) {
-					pousseur = noeud;
-				} else if (noeud.x == gTotal.caisse.x && noeud.y == gTotal.caisse.y) {
-					caisse = noeud;
-				} else if (n.aBut(noeud.y,noeud.x)) {
-					but = noeud;
-				}
-			}*/
+			//Si aucune caisse ou but dans le niveau
+			if(gTotal.caisse == null || gTotal.but == null){
 
-			if(gTotal.caisse == null){
-				System.out.println("PAS de Caisses");
+				if(gTotal.caisse == null)
+					System.out.println("Pas de caisse dans ce niveau !");
+				if(gTotal.but == null)
+					System.out.println("Pas de but dans ce niveau !");
+
+				System.out.println("Niveau impossible : passer au niveau suivant\n");
+				niveauSuivant();
 				return null;
 			}
 
-			//Algo CAISSE -> BUT
+			//Algo aStar de CAISSE -> BUT
 			NoeudV2 butDuPerso = caisseVersBut(gTotal.caisse,gTotal.but,gTotal, n);
-			System.out.println("Caisse : " + gTotal.caisse.x + "," + gTotal.caisse.y);
-			System.out.println("But : " + gTotal.but.x + "," + gTotal.but.y);
 
-			//Trouver un moyen de differencier entre un niveau impossible et
-			// le fait de bouger la caisse pour devoiler une possibilité
+			//Si la caisse ne peut pas aller vers le but
 			if(butDuPerso == null){
-				System.out.println("pas de deplacement direct possible");
+				System.out.println("Le pousseur ne peut pas se placer " +
+						" pour que la caisse (" + gTotal.caisse.x + "," + gTotal.caisse.y + ")" +
+						" arrive au but (" + gTotal.but.x + "," + gTotal.but.y + ")");
+				System.out.println("Niveau impossible : passer au niveau suivant\n");
+				niveauSuivant();
+				return null;
+
 			}else{
-				System.out.println("Deplacement caisse -> but possible et\nperso doit se placer : " + butDuPerso.x + "," + butDuPerso.y);
+				System.out.println("Le pousseur doit se placer à ("+ butDuPerso.x + "," + butDuPerso.y + ")" +
+						" pour que la caisse (" + gTotal.caisse.x + "," + gTotal.caisse.y + ")" +
+						" arrive au but (" + gTotal.but.x + "," + gTotal.but.y + ")");
 			}
 
 
-			//Algo POUSSEUR -> CAISSE
-			ArrayList<NoeudV2> etapes = null;
 
-			if(butDuPerso != null){
+			//Liste des etapes/coups que le pousseur doit suivre
+			ArrayList<NoeudV2> etapes;
 
-				if(butDuPerso.x == gTotal.perso.x && butDuPerso.y == gTotal.perso.y){
-					System.out.println("Meme endroit donc peut etre a cote de caisse");
-					return aCoteDeCaisse(n, resultat);
-				}
+			//Si la position du perso est egale à la position de BUTDUPOUSSEUR
+			if(butDuPerso.x == gTotal.perso.x && butDuPerso.y == gTotal.perso.y){
+				System.out.println("Le pousseur est a la bonne position");
 
-				System.out.println("Test chemin entre : " + gTotal.perso.x + "," + gTotal.perso.y + " et " + butDuPerso.x + "," +  butDuPerso.y);
-				System.out.println("Caisse : " + gTotal.caisse.x + "," + gTotal.caisse.y + " et a caisse " + n.aCaisse(gTotal.caisse.y,gTotal.caisse.x));
-				etapes = aStar(gTotal.perso,butDuPerso,gTotal, n, 0);
+				//Calculer comment pousser la caisse
+				return aCoteDeCaisse(n, resultat);
 			}
 
+			////System.out.println("Test chemin entre : " + gTotal.perso.x + "," + gTotal.perso.y + " et " + butDuPerso.x + "," +  butDuPerso.y);
+			////System.out.println("Caisse : " + gTotal.caisse.x + "," + gTotal.caisse.y + " et a caisse " + n.aCaisse(gTotal.caisse.y,gTotal.caisse.x));
+
+
+			//Algo aStar du POUSSEUR -> BUTDUPOUSSEUR
+			etapes = aStar(gTotal.perso,butDuPerso,gTotal, n, 0);
+
+			//Si le pousseur ne peut pas atteindre BUTDUPOUSSEUR
 			if(etapes == null){
 
-				System.out.println("Perso ne peut pas se placer pour pousser la caisse");
+				////System.out.println("Perso ne peut pas se placer pour pousser la caisse");
 
+				//Si la caisse n'a pas de voisins
 				ArrayList<NoeudV2> voisins = gTotal.caisse.voisins();
 				if(voisins==null || voisins.size() == 0){
-					System.out.println("Passer au niveau suivant, pas de possibilite");
-					System.exit(0);
+					System.out.println("La caisse est bloquée !");
+					System.out.println("Niveau impossible : passer au niveau suivant\n");
+					niveauSuivant();
+					return resultat;
 				}
+
+				//Pour chaque voisin de la caisse
 				for(NoeudV2 voisin: voisins){
 
-					System.out.println("Test chemin entre : " + gTotal.perso.x + "," + gTotal.perso.y + " et " + voisin.x + "," +  voisin.y);
+					//Regarder si la position opposée est valide (pas un mur et pas un couloir)
+					if(voisin.gauche == gTotal.caisse){
+						if(gTotal.caisse.droit != null && gTotal.caisse.droit.estCouloir){
+							continue;
+						}
+					}
+					if(voisin.droit == gTotal.caisse){
+						if(gTotal.caisse.gauche != null && gTotal.caisse.gauche.estCouloir){
+							continue;
+						}
+					}
+					if(voisin.haut == gTotal.caisse){
+						if(gTotal.caisse.bas != null && gTotal.caisse.bas.estCouloir){
+							continue;
+						}
+					}
+					if(voisin.bas == gTotal.caisse){
+						if(gTotal.caisse.haut != null && gTotal.caisse.haut.estCouloir){
+							continue;
+						}
+					}
+
+					////System.out.println("Test chemin entre : " + gTotal.perso.x + "," + gTotal.perso.y + " et " + voisin.x + "," +  voisin.y);
+
+					//Algo POUSSEUR -> VOISINCAISSE
 					etapes = aStar(gTotal.perso,voisin,gTotal, n, 0);
 
+					//Chemin est trouvé
 					if(etapes != null && etapes.size()>0){
-						System.out.println("Chemin existant pousseur caisse (pas le bon)");
+						////System.out.println("Chemin existant pousseur caisse (pas le bon)");
 						break;
-					}else{
-						//System.out.println("Pas de chemin entre : " + pousseur.x + "," + pousseur.y + " et " + caisse.voisins.get(i).x + "," +  caisse.voisins.get(i).y);
 					}
 				}
 			}
 
+			//Si aucun chemin trouvé dans les voisins
 			if(etapes == null || etapes.size() == 0){
-				System.out.println("Aucun chemin existant");
+				System.out.println("Le pousseur ne peut pas pousser la caisse jusqu'au but");
+				System.out.println("Niveau impossible : passer au niveau suivant\n");
+				niveauSuivant();
 				return null;
 			}
 
-			//dijkstra(Noeud depart, Noeud arrivee, Graphe g, Niveau n)
 			int pousseurL = n.lignePousseur();
 			int pousseurC = n.colonnePousseur();
 
-			// Ici, a titre d'exemple, on peut construire une séquence de coups
-			// qui sera jouée par l'AnimationJeuAutomatique
-			Configuration.info("Entrée dans la méthode de jeu de l'IA");
-
+			//On crée les coups correspondant aux etapes
 			for (int i = 0; i < etapes.size() ; i++) {
-				// Mouvement du pousseur
+
 				Coup coup = new Coup();
 
-                /*int y =  etapes.get(i+1).y;
-				int x = etapes.get(i+1).x;
-				int dirx = Integer.compare(x, etapes.get(i).x);
-				int diry = Integer.compare(y, etapes.get(i).y);
-
-				if(n.aCaisse(y,x)){
-					System.out.println(dirx + " " + diry);
-					coup.deplacementCaisse(y, x, y + diry, x + dirx );
-					resultat.insereQueue(coup);
-				}*/
-
 				coup.deplacementPousseur(pousseurL, pousseurC, etapes.get(i).y, etapes.get(i).x);
-				//coup.ajouteMarque(pousseurL, pousseurC,ROUGE);
-				n.fixerMarque(VERT,etapes.get(i).y, etapes.get(i).x);
+
+				//Si deja un marque, change la couleur
+				if(n.marque(etapes.get(i).y, etapes.get(i).x)==ROUGE)
+					n.fixerMarque(ROUGE,etapes.get(i).y, etapes.get(i).x);
+				else
+					n.fixerMarque(VERT,etapes.get(i).y, etapes.get(i).x);
 
 				resultat.insereQueue(coup);
 
@@ -192,15 +199,11 @@ class IASokoban extends IA {
 				pousseurC = etapes.get(i).x;
 
 			}
-			Configuration.info("Sortie de la méthode de jeu de l'IA");
 
 		}else{
-
+			//Le perso est arrivé a coté de la caisse, pousser
 			aCoteDeCaisse(n, resultat);
-
-			System.out.println("Fin");
 		}
-
 
 		retour = !retour;
 
@@ -208,54 +211,52 @@ class IASokoban extends IA {
 
 	}
 
+	public void niveauSuivant(){
+		niveau.nbCaissesSurBut = niveau.nbButs;
+		jeu.prochainNiveau();
+	}
 
 	public Sequence<Coup> aCoteDeCaisse(Niveau n,Sequence<Coup> resultat){
-		//Si caisse on pousse
+
+		//Si a caisse alors on pousse
 		int x=0,y=0;
 		if(n.aCaisse(n.pousseurL+1,n.pousseurC)){
 			x=0;
 			y=1;
 		}
-		if(n.aCaisse(n.pousseurL-1,n.pousseurC)){
+		else if(n.aCaisse(n.pousseurL-1,n.pousseurC)){
 			x=0;
 			y=-1;
 		}
-		if(n.aCaisse(n.pousseurL,n.pousseurC+1)){
+		else if(n.aCaisse(n.pousseurL,n.pousseurC+1)){
 			x=1;
 			y=0;
 		}
-		if(n.aCaisse(n.pousseurL,n.pousseurC-1)){
+		else if(n.aCaisse(n.pousseurL,n.pousseurC-1)){
 			x=-1;
 			y=0;
 		}
 
+		//Si a cote d'une caisse
 		if(x!=0 || y!=0){
-
-			//Regarder si on peut aller derriere la caisse
-                /*for (int i = 0; i < gPerso.noeuds.size(); i++) {
-					Noeud noeud = gPerso.noeuds.get(i);
-
-					for (int j = 0; < caisse.voisins.size(); j++){
-
-					}
-				}*/
-
 
 			//Si on ne peut plus pousser
 			if(n.pousseurL+2*y >= n.l || n.pousseurC+2*x >= n.c)
 				return null;
 
+			//Creation du coup
 			Coup coup = new Coup();
 			coup.deplacementCaisse(n.pousseurL+y,n.pousseurC+x, n.pousseurL+2*y,n.pousseurC+2*x);
-			//caisse.x = n.pousseurC+x;
-			//caisse.y = n.pousseurL+y;
+
 			resultat.insereQueue(coup);
 		}
 
 		return resultat;
 	}
 
+	//Indique si
 	private int ajoutAvisiter(ArrayList<NoeudV2> aVisiter, int x, int y) {
+
 		for (int i = 0; i < aVisiter.size(); i++) {
 			if (aVisiter.get(i).x == x && aVisiter.get(i).y == y) {
 				return i;
@@ -264,26 +265,47 @@ class IASokoban extends IA {
 		return -1;
 	}
 
-    /*public void creationGraphe(GrapheV2 g, Niveau n, Coords debut, int type) {
+	private void ajoutNoeud(ArrayList<NoeudV2> aVisiter, int x, int y, NoeudV2 ndCourant, GrapheV2 g, int direction){
+		int nInd = ajoutAvisiter(aVisiter, x, y);
 
-		int x = debut.x;
-		int y = debut.y;
-
-		//Ajoute le noeud present
-		if(!n.aMur(y,x)){
-			NoeudV2 nouv = new NoeudV2(x+1,y);
-			g.ajouteNoeud(nouv);
+		NoeudV2 tmp = null;
+		//Si pas noeud dans aVisiter
+		if (nInd == -1) {
+			tmp = new NoeudV2(x, y); //Creation du noeud
+			aVisiter.add(tmp); // ajout dans les noeud a visiter
+			g.ajouteNoeud(tmp); //ajoute dans le graphe
 		}
 
-		//Ajoute son voisin droit
-		if(x+1 < n.c && !n.aMur(y,x+1)){
-			NoeudV2 nouv = new NoeudV2(x+1,y);
-			nouv
-			g.ajouteNoeud(nouv);
+		switch (direction){
+			case 0:
+				if(nInd == -1)
+					ndCourant.gauche = tmp; // ajoute qu'il est le voisin gauche
+				else
+					ndCourant.gauche = aVisiter.get(nInd);
+				break;
 
+			case 1:
+				if(nInd == -1)
+					ndCourant.droit = tmp; // ajoute qu'il est le voisin droit
+				else
+					ndCourant.droit = aVisiter.get(nInd);
+				break;
+
+			case 2:
+				if(nInd == -1)
+					ndCourant.haut = tmp; // ajoute qu'il est le voisin haut
+				else
+					ndCourant.haut = aVisiter.get(nInd);
+				break;
+
+			case 3:
+				if(nInd == -1)
+					ndCourant.bas = tmp; // ajoute qu'il est le voisin bas
+				else
+					ndCourant.bas = aVisiter.get(nInd);
+				break;
 		}
-	}*/
-
+	}
 
 	public void creationGraphe(GrapheV2 g, Niveau n, Coords debut, int type) {
 
@@ -313,61 +335,43 @@ class IASokoban extends IA {
 					g.but = ndCourant;
 				}
 
-
-				//n.fixerMarque(MARRON,y,x);
-
-
+				//Ajouter le noeud courant dans le graphe
 				g.ajouteNoeud(ndCourant);
 
-
-				//Voisin gauche
+				//Voisins
 				if (x - 1 >= 0 && !n.aMur(y, x - 1)) {
-					int nInd = ajoutAvisiter(aVisiter, x - 1, y);
-					//Si pas noeud dans aVisiter
-					if (nInd == -1) {
-						NoeudV2 tmp = new NoeudV2(x - 1, y); //Creation du noeud
-						aVisiter.add(tmp); // ajout dans les noeud a visiter
-						ndCourant.gauche = tmp; // ajoute qu'il est le voisin gauche
-						g.ajouteNoeud(tmp); //ajoute dans le graphe
-					} else {
-						ndCourant.gauche = aVisiter.get(nInd);
-					}
+					ajoutNoeud(aVisiter, x-1, y, ndCourant, g, 0);
 				}
 				if (x + 1 < n.colonnes() && !n.aMur(y, x + 1)) {
-					int nInd = ajoutAvisiter(aVisiter, x + 1, y);
-					//Si pas noeud dans aVisiter
-					if (nInd == -1) {
-						NoeudV2 tmp = new NoeudV2(x + 1, y); //Creation du noeud
-						aVisiter.add(tmp); // ajout dans les noeud a visiter
-						ndCourant.droit = tmp; // ajoute qu'il est le voisin gauche
-						g.ajouteNoeud(tmp); //ajoute dans le graphe
-					} else {
-						ndCourant.droit = aVisiter.get(nInd);
-					}
-				}
-				if (y + 1 < n.lignes() && !n.aMur(y + 1, x)) {
-					int nInd = ajoutAvisiter(aVisiter, x, y + 1);
-					//Si pas noeud dans aVisiter
-					if (nInd == -1) {
-						NoeudV2 tmp = new NoeudV2(x, y + 1); //Creation du noeud
-						aVisiter.add(tmp); // ajout dans les noeud a visiter
-						ndCourant.bas = tmp; // ajoute qu'il est le voisin gauche
-						g.ajouteNoeud(tmp); //ajoute dans le graphe
-					} else {
-						ndCourant.bas = aVisiter.get(nInd);
-					}
+					ajoutNoeud(aVisiter, x+1, y, ndCourant, g, 1);
 				}
 				if (y - 1 >= 0 && !n.aMur(y - 1, x)) {
-					int nInd = ajoutAvisiter(aVisiter, x, y - 1);
-					//Si pas noeud dans aVisiter
-					if (nInd == -1) {
-						NoeudV2 tmp = new NoeudV2(x, y - 1); //Creation du noeud
-						aVisiter.add(tmp); // ajout dans les noeud a visiter
-						ndCourant.haut = tmp; // ajoute qu'il est le voisin gauche
-						g.ajouteNoeud(tmp); //ajoute dans le graphe
-					} else {
-						ndCourant.haut = aVisiter.get(nInd);
+					ajoutNoeud(aVisiter, x, y-1, ndCourant, g, 2);
+				}
+				if (y + 1 < n.lignes() && !n.aMur(y + 1, x)) {
+					ajoutNoeud(aVisiter, x, y+1, ndCourant, g, 3);
+				}
+
+				//Si le noeud courant est la fin d'un couloir (un seul voisin) est qu'il n'y a pas de but
+				if(ndCourant.voisins().size() == 1 && !n.aBut(ndCourant.y,ndCourant.x)){
+
+					NoeudV2 tmp = ndCourant.voisins().get(0);
+					NoeudV2 ancien = ndCourant;
+
+					ndCourant.estCouloir = true;
+
+					//Tant que le noeud n'est pas un but et qu'il a moins de 3 voisins
+					while(tmp.voisins().size() < 3 && n.aBut(tmp.y,tmp.x)){
+						tmp.estCouloir = true;
+						for(NoeudV2 voisin:tmp.voisins()){
+							if(voisin != ancien){
+								ancien = tmp;
+								tmp = voisin;
+								break;
+							}
+						}
 					}
+
 				}
 			}
 
@@ -388,57 +392,78 @@ class IASokoban extends IA {
 
 			if(courant == arrivee){
 				//Arrivée
-				//faire qq chose
-				System.out.println("FIN A*");
 
 				NoeudV2 tmp = arrivee;
 
 				ArrayList<NoeudV2> etapes = new ArrayList<>();
 
-				System.out.println("Etape" + depart.x + "," + depart.y);
-				System.out.println("Etape" + arrivee.x + "," + arrivee.y);
-
 				etapes.add(0,tmp);
-				while(true){
+				if(type==1 && n.marque(tmp.y,tmp.x)!=0)
+					n.fixerMarque(ROUGE,tmp.y,tmp.x);
+				else
 
-					if(tmp == depart || tmp == null){
-						etapes.remove(0);
-						return etapes;
+					//Ajouter les etapes
+					while(true){
+						if(tmp == depart || tmp == null){
+							etapes.remove(0);
+							return etapes;
+						}
+
+						etapes.add(0,tmp.parent);
+						if(type==1)
+							n.fixerMarque(ROUGE,tmp.parent.y,tmp.parent.x);
+
+						tmp = tmp.parent;
 					}
-
-					etapes.add(0,tmp.parent);
-					//System.out.println("Etape ajoutee" + tmp.parent.x + "," + tmp.parent.y);
-					tmp = tmp.parent;
-
-
-				}
 			}
 
 			ouvertList.remove(courant);
 			fermeList.add(courant);
 
-			//Pour chaque voisin de courant
+			/**
+			 * Ajouter le voisin du noeud courant si :
+			 *
+			 * 	Si on cherche le chemin pour le pousseur -> caisse (type 0):
+			 *  	- Le noeud est non null et
+			 *  	- Le noeud ne contient pas une caisse
+			 *
+			 *	Si on cherche le chemin caisse -> but (type 1):
+			 *  	- Le noeud est non null et
+			 *  	- Le noeud ne contient pas une caisse et
+			 *  	- Le noeud en face n'est pas null et
+			 *  	- ( ( Le noeud n'est pas un couloir et
+			 *  	- Le noeud n'est pas un coin ) ou
+			 *  	- Le noeud contient un but )
+			 */
 			ArrayList<NoeudV2> voisins = new ArrayList<>();
-			if(courant.gauche != null && !n.aCaisse(courant.gauche.y,courant.gauche.x) && (type == 0 || (!courant.gauche.estCoin() && courant.droit != null)))
+			if(courant.gauche != null && !n.aCaisse(courant.gauche.y,courant.gauche.x) && (type == 0 || (((!courant.gauche.estCouloir && !courant.gauche.estCoin()) || n.aBut(courant.gauche.y,courant.gauche.x)) && courant.droit != null)))
 				voisins.add(courant.gauche);
-			if(courant.droit != null && !n.aCaisse(courant.droit.y,courant.droit.x) && (type == 0 || (!courant.droit.estCoin() && courant.gauche != null)))
+			if(courant.droit != null && !n.aCaisse(courant.droit.y,courant.droit.x) && (type == 0 || (((!courant.droit.estCouloir && !courant.droit.estCoin()) || n.aBut(courant.droit.y,courant.droit.x)) && courant.gauche != null)))
 				voisins.add(courant.droit);
-			if(courant.haut != null && !n.aCaisse(courant.haut.y,courant.haut.x) && (type == 0 || (!courant.haut.estCoin() && courant.bas != null)))
+			if(courant.haut != null && !n.aCaisse(courant.haut.y,courant.haut.x) && (type == 0 || (((!courant.haut.estCouloir && !courant.haut.estCoin()) || n.aBut(courant.haut.y,courant.haut.x)) && courant.bas != null)))
 				voisins.add(courant.haut);
-			if(courant.bas != null && !n.aCaisse(courant.bas.y,courant.bas.x) && (type == 0 || (!courant.bas.estCoin() && courant.haut != null)))
+			if(courant.bas != null && !n.aCaisse(courant.bas.y,courant.bas.x) && (type == 0 || (((!courant.bas.estCouloir && !courant.bas.estCoin()) || n.aBut(courant.bas.y,courant.bas.x)) && courant.haut != null)))
 				voisins.add(courant.bas);
 
+			//Pour chaque voisin
 			for (NoeudV2 voisin:voisins) {
+
+				//Calcul du F
 				double f = voisin.g + voisin.heuristique(arrivee);
 
+				//Si le voisin est dans aucune liste
 				if(!ouvertList.contains(voisin) && !fermeList.contains(voisin)){
 					voisin.parent = courant;
 					voisin.g = courant.g + 1;
 					ouvertList.add(voisin);
 
-				} else if (f < voisin.g + voisin.heuristique(arrivee)){
+				}
+				//Si le voisin est moins cher
+				else if (f < voisin.g + voisin.heuristique(arrivee)){
 					voisin.parent = courant;
 					voisin.g = courant.g + 1;
+
+					//On change de liste
 					if(fermeList.contains(voisin)){
 						fermeList.remove(voisin);
 						ouvertList.add(voisin);
@@ -450,8 +475,9 @@ class IASokoban extends IA {
 
 	}
 
-	//Renvoie
 	public NoeudV2 coutMinimal(ArrayList<NoeudV2> noeuds){
+		//Cout minimal dans la liste noeuds
+
 		NoeudV2 noeudMin = noeuds.get(0);
 
 		for (int i = 0; i < noeuds.size(); i++){
@@ -469,15 +495,15 @@ class IASokoban extends IA {
 
 		//Si pas possible
 		if(etapes == null || etapes.size() == 0){
-			System.out.println("Pas d'etapes caisse but");
+			//Pas d'étapes, chemin impossible
 			return null;
 		}
 
 		int dirx = Integer.compare(depart.x, etapes.get(0).x);
 		int diry = Integer.compare(depart.y, etapes.get(0).y);
-		System.out.println("Caisse : Premiere etape : " + etapes.get(etapes.size()-1).x + "," + etapes.get(etapes.size()-1).y);
+		////System.out.println("Caisse : Premiere etape : " + etapes.get(etapes.size()-1).x + "," + etapes.get(etapes.size()-1).y);
 
-		//Renvoyer le noeud dans la bonne direction pour pousser la caisse
+		//Renvoyer le noeud ou le pousseur doit aller pour pousser la caisse dans la bonne direction
 		if(depart.gauche != null && depart.gauche.x == (dirx+depart.x) && depart.gauche.y == (diry+depart.y)){
 			return depart.gauche;
 		}
@@ -491,7 +517,7 @@ class IASokoban extends IA {
 			return depart.bas;
 		}
 
-		System.out.println("BUT : Deplacement de la caisse impossible");
+		////System.out.println("BUT : Deplacement de la caisse impossible");
 		return null;
 	}
 

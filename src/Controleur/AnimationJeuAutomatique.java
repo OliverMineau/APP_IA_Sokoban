@@ -46,8 +46,10 @@ class AnimationJeuAutomatique extends Animation {
 	public void miseAJour() {
 		if ((enAttente == null) || enAttente.estVide())
 			enAttente = joueur.elaboreCoups();
-		if ((enAttente == null) || enAttente.estVide())
-			Configuration.erreur("Bug : l'IA n'a joué aucun coup");
+		if ((enAttente == null) || enAttente.estVide()){
+			//Configuration.erreur("Bug : l'IA n'a joué aucun coup");
+			System.out.println("L'IA n'a joué aucun coup");
+		}
 		else
 			control.joue(enAttente.extraitTete());
 
