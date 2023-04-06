@@ -40,8 +40,8 @@ public class Sokoban {
 
 	public static void main(String[] args) {
 		InputStream in;
-		String levels = "TestIAImpossibles";
-		//String levels = "TestIA";
+		//String levels = "TestIAImpossibles";
+		String levels = "TestIA";
 		in = Configuration.ouvre("Niveaux/"+ levels +".txt");
 		Configuration.info("Niveaux trouvés");
 

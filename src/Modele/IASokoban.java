@@ -36,12 +36,11 @@ import java.util.Random;
 import static java.lang.Math.*;
 
 class IASokoban extends IA {
-	final static int MARRON = 0xBB7755;
+
 	final static int ROUGE = 0xFF0000;
 	final static int VERT = 0x00FF00;
 
 	boolean retour = true;
-
 
 
 	public IASokoban() {
@@ -111,17 +110,12 @@ class IASokoban extends IA {
 			ArrayList<NoeudV2> etapes;
 
 
-			////System.out.println("Test chemin entre : " + gTotal.perso.x + "," + gTotal.perso.y + " et " + butDuPerso.x + "," +  butDuPerso.y);
-			////System.out.println("Caisse : " + gTotal.caisse.x + "," + gTotal.caisse.y + " et a caisse " + n.aCaisse(gTotal.caisse.y,gTotal.caisse.x));
-
-
 			//Algo aStar du POUSSEUR -> BUTDUPOUSSEUR
 			etapes = aStar(gTotal.perso,butDuPerso,gTotal, n, 0);
 
 			//Si le pousseur ne peut pas atteindre BUTDUPOUSSEUR
 			if(etapes == null){
 
-				////System.out.println("Perso ne peut pas se placer pour pousser la caisse");
 
 				//Si la caisse n'a pas de voisins
 				ArrayList<NoeudV2> voisins = gTotal.caisse.voisins();
@@ -132,42 +126,68 @@ class IASokoban extends IA {
 					return resultat;
 				}
 
-				//Pour chaque voisin de la caisse
-				for(NoeudV2 voisin: voisins){
-
-					//Regarder si la position opposée est valide (pas un mur et pas un couloir)
-					if(voisin.gauche == gTotal.caisse){
-						if(gTotal.caisse.droit != null && gTotal.caisse.droit.estCouloir){
-							continue;
+				//Essayer le chemin non exploré
+				NoeudV2 nouvBut = null;
+				if(voisins.contains(butDuPerso)){
+					if(gTotal.caisse.gauche == butDuPerso){
+						if(gTotal.caisse.droit != null && !gTotal.caisse.droit.estCouloir && !gTotal.caisse.droit.estCoin()){
+							nouvBut = gTotal.caisse.droit;
 						}
 					}
-					if(voisin.droit == gTotal.caisse){
-						if(gTotal.caisse.gauche != null && gTotal.caisse.gauche.estCouloir){
-							continue;
-						}
-					}
-					if(voisin.haut == gTotal.caisse){
-						if(gTotal.caisse.bas != null && gTotal.caisse.bas.estCouloir){
-							continue;
-						}
-					}
-					if(voisin.bas == gTotal.caisse){
-						if(gTotal.caisse.haut != null && gTotal.caisse.haut.estCouloir){
-							continue;
-						}
-					}
+					else if(gTotal.caisse.droit == butDuPerso){
+						if(gTotal.caisse.gauche != null && !gTotal.caisse.gauche.estCouloir && !gTotal.caisse.gauche.estCoin()){
+							nouvBut = gTotal.caisse.gauche;
+						}					}
+					else if(gTotal.caisse.haut == butDuPerso){
+						if(gTotal.caisse.bas != null && !gTotal.caisse.bas.estCouloir && !gTotal.caisse.bas.estCoin()){
+							nouvBut = gTotal.caisse.bas;
+						}						}
+					else if(gTotal.caisse.bas == butDuPerso){
+						if(gTotal.caisse.haut != null && !gTotal.caisse.haut.estCouloir && !gTotal.caisse.haut.estCoin()){
+							nouvBut = gTotal.caisse.haut;
+						}						}
+				}
 
-					////System.out.println("Test chemin entre : " + gTotal.perso.x + "," + gTotal.perso.y + " et " + voisin.x + "," +  voisin.y);
+				if(nouvBut != null){
+					etapes = aStar(gTotal.perso,nouvBut,gTotal, n, 0);
+				}
 
-					//Algo POUSSEUR -> VOISINCAISSE
-					etapes = aStar(gTotal.perso,voisin,gTotal, n, 0);
+				if(etapes == null || etapes.size()==0){
+					//Pour chaque voisin de la caisse
+					for(NoeudV2 voisin: voisins){
 
-					//Chemin est trouvé
-					if(etapes != null && etapes.size()>0){
-						////System.out.println("Chemin existant pousseur caisse (pas le bon)");
-						break;
+						//Regarder si la position opposée est valide (pas un mur et pas un couloir)
+						if(voisin.gauche == gTotal.caisse){
+							if(gTotal.caisse.droit != null && gTotal.caisse.droit.estCouloir){
+								continue;
+							}
+						}
+						if(voisin.droit == gTotal.caisse){
+							if(gTotal.caisse.gauche != null && gTotal.caisse.gauche.estCouloir){
+								continue;
+							}
+						}
+						if(voisin.haut == gTotal.caisse){
+							if(gTotal.caisse.bas != null && gTotal.caisse.bas.estCouloir){
+								continue;
+							}
+						}
+						if(voisin.bas == gTotal.caisse){
+							if(gTotal.caisse.haut != null && gTotal.caisse.haut.estCouloir){
+								continue;
+							}
+						}
+
+						//Algo POUSSEUR -> VOISINCAISSE
+						etapes = aStar(gTotal.perso,voisin,gTotal, n, 0);
+
+						//Chemin est trouvé
+						if(etapes != null && etapes.size()>0){
+							break;
+						}
 					}
 				}
+
 			}
 
 			//Si aucun chemin trouvé dans les voisins
@@ -503,7 +523,6 @@ class IASokoban extends IA {
 
 		int dirx = Integer.compare(depart.x, etapes.get(0).x);
 		int diry = Integer.compare(depart.y, etapes.get(0).y);
-		////System.out.println("Caisse : Premiere etape : " + etapes.get(etapes.size()-1).x + "," + etapes.get(etapes.size()-1).y);
 
 		//Renvoyer le noeud ou le pousseur doit aller pour pousser la caisse dans la bonne direction
 		if(depart.gauche != null && depart.gauche.x == (dirx+depart.x) && depart.gauche.y == (diry+depart.y)){
@@ -519,7 +538,6 @@ class IASokoban extends IA {
 			return depart.bas;
 		}
 
-		////System.out.println("BUT : Deplacement de la caisse impossible");
 		return null;
 	}
 
